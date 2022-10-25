@@ -67,6 +67,7 @@ func main() {
 	printResults(instructionsArray, *cmdOutFile+"_dis.txt")
 
 	// begin simulation
+	var simulationArray []Simulation
 
 	fmt.Println("infile:", *cmdInFile)
 	fmt.Println("outfile: ", *cmdOutFile)
@@ -393,7 +394,7 @@ func printResults(instrArray []Instruction, fileName string) {
 	}
 }
 
-func simResults(instrArray []Instruction, fileName string) {
+func simResults(instrArray []Instruction, simArray []Simulation, fileName string) {
 
 	return
 }
