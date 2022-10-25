@@ -397,10 +397,40 @@ func printResults(instrArray []Instruction, fileName string) {
 }
 
 // simulation functions
-
 func simInstructions(instrArray []Instruction, simArray []Simulation) {
 	// run function to decide outcome then assign based on cycle
+	i := 0
+	for instrArray[i].typeOfInstruction != "BREAK" {
+		switch instrArray[i].op {
+		case "SUB": // rd = rn - rm
+		case "AND": // rd = rm & rn
+		case "ADD": // rd = rm + rn
+		case "ORR": // rd = rm | rn
+		case "EOR": // rd = rm ^ rn
+		case "LSR": // rn shifted shamt pad with sign bit
+		case "LSL": // rd = rn << shamt
+		case "ASR": // rd = rn >> shamt
 
+		case "LDUR":
+		case "STUR":
+
+		case "ADDI":
+		case "SUBI":
+
+		case "B":
+
+		case "CBZ":
+		case "CBNZ":
+
+		case "MOVZ":
+		case "MOVK":
+		case "NOP":
+		}
+		i++
+	}
+	if instrArray[i].typeOfInstruction == "BREAK" {
+
+	}
 }
 
 func displaySimulation(simArray []Simulation, fileName string) {
