@@ -35,7 +35,7 @@ type Simulation struct {
 	programCnt    int    // program counter
 	opcode        uint64 // once we know this we can figure out everything else
 	op            string // what is it? ADD, SUB, LSL, etc...
-	registerArray [24]int
+	registerArray [32]int
 	rd            uint8
 	rn            uint8
 	rm            uint8
@@ -50,7 +50,7 @@ type Simulation struct {
 }
 
 // global data slice
-var dataSlice []int
+var dataSlice [][8]int
 
 func main() {
 	//flag.String gets pointers to command line arguments
@@ -68,6 +68,8 @@ func main() {
 
 	// begin simulation
 	var simulationArray []Simulation
+
+	displaySimulation(simulationArray, *cmdOutFile+"_sim.txt")
 
 	fmt.Println("infile:", *cmdInFile)
 	fmt.Println("outfile: ", *cmdOutFile)
@@ -401,6 +403,50 @@ func simInstructions(instrArray []Instruction, simArray []Simulation) {
 
 }
 
-func displaySimulations() {
+func displaySimulation(simArray []Simulation, fileName string) {
+	f, fileErr := os.Create(fileName)
+	if fileErr != nil {
+		fmt.Println(fileErr)
+	}
 
+	for i, _ := range simArray {
+		fmt.Fprintln(f, "====================")
+		fmt.Fprintf(f, "Cycle:%d\t%d\t%s\n", simArray[i].cycle, simArray[i].programCnt, instructionString(simArray[i]))
+
+		// print current register
+		fmt.Fprint(f, "Registers:\n")
+		fmt.Fprintf(f, "r00:\t%s", arrToString(simArray[i].registerArray[0:8]))
+		fmt.Fprintf(f, "r08:\t%s", arrToString(simArray[i].registerArray[8:16]))
+		fmt.Fprintf(f, "r16:\t%s", arrToString(simArray[i].registerArray[16:24]))
+		fmt.Fprintf(f, "r24:\t%s\n", arrToString(simArray[i].registerArray[24:32]))
+
+		// print data
+		fmt.Fprintf(f, "\nData:")
+		for i, _ := range dataSlice {
+			fmt.Fprintf(f, "\n%d:\t", dataSlice[i])
+			for j, _ := range dataSlice[i] {
+				fmt.Fprintf(f, "%d\t", dataSlice[i][j])
+			}
+		}
+		fmt.Fprintln(f, "====================")
+	}
+}
+
+func instructionString(sim Simulation) string {
+	switch sim.op {
+	case "ADD":
+		return fmt.Sprintf("%s\tR%d, R%d, R%d", sim.op, sim.rd, sim.rm, sim.rn)
+	case "ADDI":
+		return fmt.Sprintf("%s\tR%d, R%d, #%s", sim.op, sim.rd, sim.rn, sim.im)
+	}
+
+	return " "
+}
+
+func arrToString(arr []int) string {
+	var str = ""
+	for i, _ := range arr {
+		str = str + strconv.Itoa(arr[i]) + "\t"
+	}
+	return str
 }
