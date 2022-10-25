@@ -1,4 +1,4 @@
-package Project2_Team10
+package main
 
 import (
 	"bufio"
@@ -67,7 +67,7 @@ func main() {
 	printResults(instructionsArray, *cmdOutFile+"_dis.txt")
 
 	// begin simulation
-	var simulationArray []Simulation
+	//var simulationArray []Simulation
 
 	fmt.Println("infile:", *cmdInFile)
 	fmt.Println("outfile: ", *cmdOutFile)
@@ -398,15 +398,7 @@ func printResults(instrArray []Instruction, fileName string) {
 
 func simInstructions(instrArray []Instruction, simArray []Simulation) {
 	// run function to decide outcome then assign based on cycle
-	for i, _ := range instrArray {
 
-		simArray[]
-	}
-}
-
-func runInstructions(instrArray Instruction) int {
-	var sim Simulation
-	return 0
 }
 
 func displaySimulations() {
