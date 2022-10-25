@@ -29,6 +29,29 @@ type Instruction struct {
 	op2               string
 }
 
+type Simulation struct {
+	cycle         int
+	lineValue     uint64 // linevalue = rawinstruction converted to uint64 so I could use mask and shift on it.
+	programCnt    int    // program counter
+	opcode        uint64 // once we know this we can figure out everything else
+	op            string // what is it? ADD, SUB, LSL, etc...
+	registerArray [24]int
+	rd            uint8
+	rn            uint8
+	rm            uint8
+	im            string
+	rt            uint8
+	address       uint8
+	offset        string
+	conditional   uint8
+	field         uint64
+	shamt         uint8
+	op2           string
+}
+
+// global data slice
+var dataSlice [][]int
+
 func main() {
 	//flag.String gets pointers to command line arguments
 	cmdInFile := flag.String("i", "addtest1_bin.txt", "-i [input file path/name]")
@@ -41,11 +64,9 @@ func main() {
 	var instructionsArray []Instruction = readFile(inFile)
 	initializeInstructions(instructionsArray) //initialize the instructions
 
-	//for i := 0; i < len(instructionsArray); i++ {
-	//	fmt.Println(instructionsArray[i])
-	//}
-	//fmt.Println()
 	printResults(instructionsArray, *cmdOutFile+"_dis.txt")
+
+	// begin simulation
 
 	fmt.Println("infile:", *cmdInFile)
 	fmt.Println("outfile: ", *cmdOutFile)
@@ -370,4 +391,9 @@ func printResults(instrArray []Instruction, fileName string) {
 		_, _ = file.WriteString(instrArray[i].rawInstruction + " " + strconv.Itoa(instrArray[i].programCnt) +
 			" " + strconv.Itoa(int(signedVariable(lineValue, 32))) + "\n")
 	}
+}
+
+func simResults(instrArray []Instruction, fileName string) {
+
+	return
 }
