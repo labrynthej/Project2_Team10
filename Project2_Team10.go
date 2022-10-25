@@ -50,7 +50,7 @@ type Simulation struct {
 }
 
 // global data slice
-var dataSlice [][]int
+var dataSlice []int
 
 func main() {
 	//flag.String gets pointers to command line arguments
@@ -68,7 +68,6 @@ func main() {
 
 	// begin simulation
 	var simulationArray []Simulation
-	simResults(instructionsArray, simulationArray, *cmdOutFile+"_sim.txt")
 
 	fmt.Println("infile:", *cmdInFile)
 	fmt.Println("outfile: ", *cmdOutFile)
@@ -395,7 +394,21 @@ func printResults(instrArray []Instruction, fileName string) {
 	}
 }
 
-func simResults(instrArray []Instruction, simArray []Simulation, fileName string) {
+// simulation functions
 
-	return
+func simInstructions(instrArray []Instruction, simArray []Simulation) {
+	// run function to decide outcome then assign based on cycle
+	for i, _ := range instrArray {
+
+		simArray[]
+	}
+}
+
+func runInstructions(instrArray Instruction) int {
+	var sim Simulation
+	return 0
+}
+
+func displaySimulations() {
+
 }
