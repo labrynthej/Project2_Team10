@@ -31,7 +31,7 @@ type Instruction struct {
 }
 
 // global data slice
-var dataSlice [][8]int
+var dataSlice = make(map[int]int)
 
 // global register map
 var registerMap = make(map[uint8]int)
@@ -372,10 +372,12 @@ func printResults(instrArray []Instruction, fileName string) {
 	}
 	_, _ = file.WriteString(instrArray[i].rawInstruction + " " + strconv.Itoa(instrArray[i].programCnt) + " BREAK\n")
 	for i = i + 1; i < len(instrArray); i++ {
+
 		lineValue, _ := strconv.ParseUint(instrArray[i].rawInstruction, 2, 32)
 		count--
 		_, _ = file.WriteString(instrArray[i].rawInstruction + " " + strconv.Itoa(instrArray[i].programCnt) +
 			" " + strconv.Itoa(int(signedVariable(lineValue, 32))) + "\n")
+		dataSlice[instrArray[i].programCnt] = int(signedVariable(lineValue, 32))
 	}
 }
 
@@ -447,13 +449,13 @@ func displaySimulation(simArray []Instruction, fileName string) {
 
 		// print data
 		fmt.Fprintf(f, "\nData:")
-		for i, _ := range dataSlice {
-			fmt.Fprintf(f, "\n%d:\t", dataSlice[i])
-			for j, _ := range dataSlice[i] {
-				fmt.Fprintf(f, "%d\t", dataSlice[i][j])
+		for _, v := range dataSlice {
+			fmt.Fprintf(f, "\n%d:\t", v)
+			for j, _ := range dataSlice {
+				fmt.Fprintf(f, "%d\t", dataSlice[j])
 			}
 		}
-		//fmt.Fprintln(f, "====================")
+		fmt.Fprintf(f, "\n")
 	}
 }
 
@@ -476,3 +478,12 @@ func mapToString(arr map[uint8]int, highValue uint8) string {
 	}
 	return str
 }
+
+//func intMapToString(arr map[int]int) string {
+//	var str = ""
+//	var i uint8
+//	for i = 0; i < 8; i++ {
+//		str = str + strconv.Itoa(arr[i]) + "\t"
+//	}
+//	return str
+//}
