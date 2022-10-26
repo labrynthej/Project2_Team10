@@ -27,12 +27,14 @@ type Instruction struct {
 	field             uint64
 	shamt             uint8
 	op2               string
-	registerArray     [32]int
 	cycle             int
 }
 
 // global data slice
 var dataSlice [][8]int
+
+// global register map
+var registerMap = make(map[uint8]int)
 
 func main() {
 	//flag.String gets pointers to command line arguments
@@ -382,7 +384,8 @@ func simInstructions(instrArray []Instruction) {
 	i := 0
 	for instrArray[i].typeOfInstruction != "BREAK" {
 		switch instrArray[i].op {
-		case "SUB": // rd = rn - rm
+		case "SUB":
+			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] - registerMap[instrArray[i].rm] // 	rd = rn - rm
 		case "AND": // rd = rm & rn
 		case "ADD": // rd = rm + rn
 		case "ORR": // rd = rm | rn
