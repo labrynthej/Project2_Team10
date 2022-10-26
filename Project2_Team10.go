@@ -27,26 +27,8 @@ type Instruction struct {
 	field             uint64
 	shamt             uint8
 	op2               string
-}
-
-type Simulation struct {
-	cycle         int
-	lineValue     uint64 // linevalue = rawinstruction converted to uint64 so I could use mask and shift on it.
-	programCnt    int    // program counter
-	opcode        uint64 // once we know this we can figure out everything else
-	op            string // what is it? ADD, SUB, LSL, etc...
-	registerArray [32]int
-	rd            uint8
-	rn            uint8
-	rm            uint8
-	im            string
-	rt            uint8
-	address       uint8
-	offset        string
-	conditional   uint8
-	field         uint64
-	shamt         uint8
-	op2           string
+	registerArray     [32]int
+	cycle             int
 }
 
 // global data slice
@@ -67,7 +49,7 @@ func main() {
 	printResults(instructionsArray, *cmdOutFile+"_dis.txt")
 
 	// begin simulation
-	var simulationArray []Simulation
+	var simulationArray []Instruction
 
 	displaySimulation(simulationArray, *cmdOutFile+"_sim.txt")
 
@@ -397,7 +379,7 @@ func printResults(instrArray []Instruction, fileName string) {
 }
 
 // simulation functions
-func simInstructions(instrArray []Instruction, simArray []Simulation) {
+func simInstructions(instrArray []Instruction) {
 	// run function to decide outcome then assign based on cycle
 	i := 0
 	for instrArray[i].typeOfInstruction != "BREAK" {
@@ -433,7 +415,7 @@ func simInstructions(instrArray []Instruction, simArray []Simulation) {
 	}
 }
 
-func displaySimulation(simArray []Simulation, fileName string) {
+func displaySimulation(simArray []Instruction, fileName string) {
 	f, fileErr := os.Create(fileName)
 	if fileErr != nil {
 		fmt.Println(fileErr)
@@ -462,7 +444,7 @@ func displaySimulation(simArray []Simulation, fileName string) {
 	}
 }
 
-func instructionString(sim Simulation) string {
+func instructionString(sim Instruction) string {
 	switch sim.op {
 	case "ADD":
 		return fmt.Sprintf("%s\tR%d, R%d, R%d", sim.op, sim.rd, sim.rm, sim.rn)
