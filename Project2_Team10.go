@@ -34,7 +34,7 @@ type Instruction struct {
 var dataSlice [][8]int
 
 // global register map
-var registerMap = make(map[uint8]uint8)
+var registerMap = make(map[uint8]int)
 
 func main() {
 	//flag.String gets pointers to command line arguments
@@ -51,6 +51,8 @@ func main() {
 	printResults(instructionsArray, *cmdOutFile+"_dis.txt")
 
 	// begin simulation
+	simInstructions(instructionsArray)
+	fmt.Println(registerMap)
 	displaySimulation(instructionsArray, *cmdOutFile+"_sim.txt")
 
 	fmt.Println("infile:", *cmdInFile)
@@ -381,6 +383,9 @@ func printResults(instrArray []Instruction, fileName string) {
 func simInstructions(instrArray []Instruction) {
 	// run function to decide outcome then assign based on cycle
 	i := 0
+	for j := 0; j < 32; j++ {
+		registerMap[uint8(j)] = 0
+	}
 	for instrArray[i].typeOfInstruction != "BREAK" {
 		switch instrArray[i].op {
 		case "SUB":
@@ -404,7 +409,7 @@ func simInstructions(instrArray []Instruction) {
 		case "STUR":
 
 		case "ADDI":
-			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] + registerMap[instrArray[i].im]
+			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] + int(instrArray[i].im)
 		case "SUBI":
 
 		case "B":
@@ -434,11 +439,11 @@ func displaySimulation(simArray []Instruction, fileName string) {
 		fmt.Fprintf(f, "Cycle:%d\t%d\t%s\n", simArray[i].cycle, simArray[i].programCnt, instructionString(simArray[i]))
 
 		// print current register
-		fmt.Fprint(f, "Registers:\n")
-		fmt.Fprintf(f, "r00:\t%s", arrToString(simArray[i].registerArray[0:8]))
-		fmt.Fprintf(f, "r08:\t%s", arrToString(simArray[i].registerArray[8:16]))
-		fmt.Fprintf(f, "r16:\t%s", arrToString(simArray[i].registerArray[16:24]))
-		fmt.Fprintf(f, "r24:\t%s\n", arrToString(simArray[i].registerArray[24:32]))
+		fmt.Fprint(f, "\nRegisters:\n")
+		fmt.Fprintf(f, "r00:\t%s", mapToString(registerMap, 8))
+		fmt.Fprintf(f, "\nr08:\t%s", mapToString(registerMap, 16))
+		fmt.Fprintf(f, "\nr16:\t%s", mapToString(registerMap, 24))
+		fmt.Fprintf(f, "\nr24:\t%s\n", mapToString(registerMap, 32))
 
 		// print data
 		fmt.Fprintf(f, "\nData:")
@@ -448,7 +453,7 @@ func displaySimulation(simArray []Instruction, fileName string) {
 				fmt.Fprintf(f, "%d\t", dataSlice[i][j])
 			}
 		}
-		fmt.Fprintln(f, "====================")
+		//fmt.Fprintln(f, "====================")
 	}
 }
 
@@ -463,9 +468,10 @@ func instructionString(sim Instruction) string {
 	return " "
 }
 
-func arrToString(arr []int) string {
+func mapToString(arr map[uint8]int, highValue uint8) string {
 	var str = ""
-	for i, _ := range arr {
+	var i uint8
+	for i = highValue - 8; i < highValue; i++ {
 		str = str + strconv.Itoa(arr[i]) + "\t"
 	}
 	return str
