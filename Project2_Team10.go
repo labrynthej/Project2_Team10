@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strconv"
 )
 
@@ -449,11 +450,19 @@ func displaySimulation(simArray []Instruction, fileName string) {
 
 		// print data
 		fmt.Fprintf(f, "\nData:")
-		for _, v := range dataSlice {
-			fmt.Fprintf(f, "\n%d:\t", v)
-			for j, _ := range dataSlice {
-				fmt.Fprintf(f, "%d\t", dataSlice[j])
+		var keys []int
+		for k := range dataSlice {
+			keys = append(keys, k)
+		}
+		sort.Ints(keys)
+		for _, key := range keys {
+			if (key-keys[0])%32 == 0 {
+				fmt.Fprintf(f, "\n%d:\t", key)
+				for j := 0; j < 32; j = j + 4 {
+					fmt.Fprintf(f, "%d\t", dataSlice[key+j])
+				}
 			}
+
 		}
 		fmt.Fprintf(f, "\n")
 	}
@@ -465,6 +474,9 @@ func instructionString(sim Instruction) string {
 		return fmt.Sprintf("%s\tR%d, R%d, R%d", sim.op, sim.rd, sim.rm, sim.rn)
 	case "ADDI":
 		return fmt.Sprintf("%s\tR%d, R%d, #%s", sim.op, sim.rd, sim.rn, sim.im)
+	default:
+		return fmt.Sprintf("%s\t", sim.op)
+
 	}
 
 	return " "
@@ -478,12 +490,3 @@ func mapToString(arr map[uint8]int, highValue uint8) string {
 	}
 	return str
 }
-
-//func intMapToString(arr map[int]int) string {
-//	var str = ""
-//	var i uint8
-//	for i = 0; i < 8; i++ {
-//		str = str + strconv.Itoa(arr[i]) + "\t"
-//	}
-//	return str
-//}
