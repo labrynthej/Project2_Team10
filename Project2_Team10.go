@@ -49,9 +49,7 @@ func main() {
 	printResults(instructionsArray, *cmdOutFile+"_dis.txt")
 
 	// begin simulation
-	var simulationArray []Instruction
-
-	displaySimulation(simulationArray, *cmdOutFile+"_sim.txt")
+	displaySimulation(instructionsArray, *cmdOutFile+"_sim.txt")
 
 	fmt.Println("infile:", *cmdInFile)
 	fmt.Println("outfile: ", *cmdOutFile)
