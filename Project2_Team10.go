@@ -266,6 +266,7 @@ func printResults(instrArray []Instruction, fileName string) {
 			_, _ = file.WriteString(" " + strconv.Itoa(instrArray[i].programCnt) + " " + instrArray[i].op + " R" +
 				strconv.Itoa(int(instrArray[i].rd)) + ", R" + strconv.Itoa(int(instrArray[i].rn)) +
 				", R" + strconv.Itoa(int(instrArray[i].rm))) // print pc, type, Rm, Shamt, Rn, Rd
+			break
 		// print results for D type instruction == opcode (11 bits), address (9 bits), op2 (2 bits), Rn (5 bits), Rt (5 bits)
 		case "D":
 			// print seperated binary opcode
@@ -288,6 +289,7 @@ func printResults(instrArray []Instruction, fileName string) {
 			_, _ = file.WriteString(" " + strconv.Itoa(instrArray[i].programCnt) + " " + instrArray[i].op + " R" +
 				strconv.Itoa(int(instrArray[i].rt)) + ", [R" + strconv.Itoa(int(instrArray[i].rn)) + ", #" +
 				strconv.Itoa(int(instrArray[i].address)) + "]") // print pc, type, Rt, Rn, address
+			break
 		// print results for I type instruction == opcode (10 bits), immediate (12 bits), Rn (5 bits), Rd (5 bits)
 		case "I":
 			// print separated binary opcode
@@ -308,6 +310,7 @@ func printResults(instrArray []Instruction, fileName string) {
 			_, _ = file.WriteString(" " + strconv.Itoa(instrArray[i].programCnt) + " " + instrArray[i].op + " R" +
 				strconv.Itoa(int(instrArray[i].rd)) + ", R" + strconv.Itoa(int(instrArray[i].rn)) +
 				", #" + strconv.Itoa(int(instrArray[i].im))) // print pc, type, Rd, rn, im
+			break
 		// print results for B type instruction == opcode (6 bits), offset (26 bits)
 		case "B":
 			// print separated binary code
@@ -323,6 +326,7 @@ func printResults(instrArray []Instruction, fileName string) {
 			}
 			_, _ = file.WriteString(" " + strconv.Itoa(instrArray[i].programCnt) + " " + instrArray[i].op + " #" +
 				strconv.Itoa(int(instrArray[i].offset))) // print pc, type, offset
+			break
 		// print results for CB type instructions == opcode (8 bits), offset (19 bits), conditional (5 bits)
 		case "CB":
 			// print separated binary code
@@ -340,6 +344,7 @@ func printResults(instrArray []Instruction, fileName string) {
 			}
 			_, _ = file.WriteString(" " + strconv.Itoa(instrArray[i].programCnt) + " " + instrArray[i].op + " R" +
 				strconv.Itoa(int(instrArray[i].conditional)) + ", " + strconv.Itoa(int(instrArray[i].offset)))
+			break
 		// print results for IM type instructions == opcode (9 bits), shift code (2 bits), field (16 bits), Rd (5 bits)
 		case "IM":
 			// print seperated binary code
@@ -360,9 +365,11 @@ func printResults(instrArray []Instruction, fileName string) {
 			_, _ = file.WriteString(" " + strconv.Itoa(instrArray[i].programCnt) + " " + instrArray[i].op + " R" +
 				strconv.Itoa(int(instrArray[i].rd)) + ", " + strconv.Itoa(int(instrArray[i].field)) + ", LSL " +
 				strconv.Itoa(int(instrArray[i].shamt)))
+			break
 		case "N/A":
 			_, _ = file.WriteString(instrArray[i].rawInstruction + " " +
 				strconv.Itoa(instrArray[i].programCnt) + " " + "NOP")
+			break
 		default:
 			println("Invalid value on line " + strconv.Itoa(i))
 		}
@@ -384,46 +391,73 @@ func printResults(instrArray []Instruction, fileName string) {
 // simulation functions
 func simInstructions(instrArray []Instruction) {
 	// run function to decide outcome then assign based on cycle
-	i := 0
 	for j := 0; j < 32; j++ {
 		registerMap[uint8(j)] = 0
 	}
+	// as long as instruction is not break, loop through all cycles
+	i := 0
 	for instrArray[i].typeOfInstruction != "BREAK" {
 		switch instrArray[i].op {
-		case "SUB":
-			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] - registerMap[instrArray[i].rm] // 	rd = rn - rm
+		// R format instructions
+		case "SUB": // 	rd = rn - rm
+			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] - registerMap[instrArray[i].rm]
+			break
 		case "AND": // rd = rm & rn
 			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] & registerMap[instrArray[i].rm]
+			break
 		case "ADD": // rd = rm + rn
 			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] + registerMap[instrArray[i].rm]
+			break
 		case "ORR": // rd = rm | rn
 			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] | registerMap[instrArray[i].rm]
+			break
 		case "EOR": // rd = rm ^ rn
 			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] ^ registerMap[instrArray[i].rm]
+			break
 		case "LSR": // rn shifted shamt pad with sign bit
 			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rd] >> registerMap[instrArray[i].shamt]
+			break
 		case "LSL": // rd = rn << shamt
 			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rd] << registerMap[instrArray[i].shamt]
+			break
 		case "ASR": // rd = rn >> shamt
 			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rd] >> registerMap[instrArray[i].shamt]
+			break
 
+		// D format instructions
 		case "LDUR":
 		case "STUR":
 
-		case "ADDI":
+		// I format instructions
+		case "ADDI": // rd = rn + im
 			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] + int(instrArray[i].im)
-		case "SUBI":
+			break
+		case "SUBI": // rd = rn - im
+			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] - int(instrArray[i].im)
+			break
 
-		case "B":
+		// B and CB format instructions
+		case "B": // PC = PC +- (4 * offset)
+			instrArray[i].programCnt = instrArray[i].programCnt + (4 * int(instrArray[i].offset))
+			break
+		case "CBZ": // if (conditional == 0) {PC = 4 * offset}
+			if instrArray[i].conditional == 0 {
+				instrArray[i].programCnt = 4 * int(instrArray[i].offset)
+			}
+			break
+		case "CBNZ": // if (conditional == 1) {PC = 4 * offset}
+			if instrArray[i].conditional == 1 {
+				instrArray[i].programCnt = 4 * int(instrArray[i].offset)
+			}
+			break
 
-		case "CBZ":
-		case "CBNZ":
-
+		// IM format instructions
 		case "MOVZ":
 		case "MOVK":
 		case "NOP":
 		}
-		i++
+		i++                   // increment loop counter
+		instrArray[i].cycle++ // increment cycle
 	}
 	if instrArray[i].typeOfInstruction == "BREAK" {
 
