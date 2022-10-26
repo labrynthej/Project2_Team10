@@ -13,28 +13,28 @@ type Instruction struct {
 	typeOfInstruction string // instruction type "R", "I", etc..
 	rawInstruction    string // raw data (we need to run this through a function that figures out the OPcode)
 	lineValue         uint64 // linevalue = rawinstruction converted to uint64 so I could use mask and shift on it.
-	programCnt        int    // program counter
+	field             uint64
 	opcode            uint64 // once we know this we can figure out everything else
 	op                string // what is it? ADD, SUB, LSL, etc...
 	rd                uint8
 	rn                uint8
 	rm                uint8
-	im                string
+	im                uint8
 	rt                uint8
 	address           uint8
-	offset            string
+	offset            uint8
 	conditional       uint8
-	field             uint64
 	shamt             uint8
-	op2               string
+	op2               uint8
 	cycle             int
+	programCnt        int // program counter
 }
 
 // global data slice
 var dataSlice [][8]int
 
 // global register map
-var registerMap = make(map[uint8]int)
+var registerMap = make(map[uint8]uint8)
 
 func main() {
 	//flag.String gets pointers to command line arguments
@@ -114,7 +114,7 @@ func initializeInstructions(instArray []Instruction) {
 			if instArray[i].typeOfInstruction == "D" {
 				instArray[i].rn = uint8((lineValue & 0x3E0) >> 5)
 				instArray[i].address = uint8((lineValue & 0x1FF000) >> 12)
-				instArray[i].op2 = "#" + strconv.Itoa(int((lineValue&0xC00)>>10))
+				instArray[i].op2 = uint8((lineValue & 0xC00) >> 10)
 				instArray[i].rt = uint8(lineValue & 0x1F)
 			}
 
@@ -122,20 +122,20 @@ func initializeInstructions(instArray []Instruction) {
 			if instArray[i].typeOfInstruction == "I" {
 				instArray[i].opcode = lineValue >> 22
 				instArray[i].rn = uint8((lineValue & 0x3E0) >> 5)
-				instArray[i].im = "#" + strconv.Itoa(int(signedVariable(lineValue&0x3FFC00>>10, 12)))
+				instArray[i].im = uint8(signedVariable(lineValue&0x3FFC00>>10, 12))
 				instArray[i].rd = uint8(lineValue & 0x1F)
 			}
 
 			// set values for instruction type "B" | opcode | offset |
 			if instArray[i].typeOfInstruction == "B" {
 				instArray[i].opcode = lineValue >> 26
-				instArray[i].offset = "#" + strconv.Itoa(int(signedVariable(lineValue&0x3FFFFFF, 26)))
+				instArray[i].offset = uint8(signedVariable(lineValue&0x3FFFFFF, 26))
 			}
 
 			// set values for instruction type "CB" (conditional B) | opcode | offset |
 			if instArray[i].typeOfInstruction == "CB" {
 				instArray[i].opcode = lineValue >> 24
-				instArray[i].offset = "#" + strconv.Itoa(int(signedVariable(lineValue&0xFFFFE0>>5, 19)))
+				instArray[i].offset = uint8(signedVariable(lineValue&0xFFFFE0>>5, 19))
 				instArray[i].conditional = uint8(lineValue & 0x1F)
 			}
 
@@ -151,7 +151,6 @@ func initializeInstructions(instArray []Instruction) {
 				break
 			}
 		}
-
 	}
 }
 
@@ -306,7 +305,7 @@ func printResults(instrArray []Instruction, fileName string) {
 			}
 			_, _ = file.WriteString(" " + strconv.Itoa(instrArray[i].programCnt) + " " + instrArray[i].op + " R" +
 				strconv.Itoa(int(instrArray[i].rd)) + ", R" + strconv.Itoa(int(instrArray[i].rn)) +
-				", " + instrArray[i].im) // print pc, type, Rd, rn, im
+				", #" + strconv.Itoa(int(instrArray[i].im))) // print pc, type, Rd, rn, im
 		// print results for B type instruction == opcode (6 bits), offset (26 bits)
 		case "B":
 			// print separated binary code
@@ -320,8 +319,8 @@ func printResults(instrArray []Instruction, fileName string) {
 					_, _ = file.WriteString(string(instrArray[i].rawInstruction[j]))
 				}
 			}
-			_, _ = file.WriteString(" " + strconv.Itoa(instrArray[i].programCnt) + " " + instrArray[i].op + " " +
-				instrArray[i].offset) // print pc, type, offset
+			_, _ = file.WriteString(" " + strconv.Itoa(instrArray[i].programCnt) + " " + instrArray[i].op + " #" +
+				strconv.Itoa(int(instrArray[i].offset))) // print pc, type, offset
 		// print results for CB type instructions == opcode (8 bits), offset (19 bits), conditional (5 bits)
 		case "CB":
 			// print separated binary code
@@ -338,7 +337,7 @@ func printResults(instrArray []Instruction, fileName string) {
 				}
 			}
 			_, _ = file.WriteString(" " + strconv.Itoa(instrArray[i].programCnt) + " " + instrArray[i].op + " R" +
-				strconv.Itoa(int(instrArray[i].conditional)) + ", " + instrArray[i].offset)
+				strconv.Itoa(int(instrArray[i].conditional)) + ", " + strconv.Itoa(int(instrArray[i].offset)))
 		// print results for IM type instructions == opcode (9 bits), shift code (2 bits), field (16 bits), Rd (5 bits)
 		case "IM":
 			// print seperated binary code
@@ -387,17 +386,25 @@ func simInstructions(instrArray []Instruction) {
 		case "SUB":
 			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] - registerMap[instrArray[i].rm] // 	rd = rn - rm
 		case "AND": // rd = rm & rn
+			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] & registerMap[instrArray[i].rm]
 		case "ADD": // rd = rm + rn
+			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] + registerMap[instrArray[i].rm]
 		case "ORR": // rd = rm | rn
+			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] | registerMap[instrArray[i].rm]
 		case "EOR": // rd = rm ^ rn
+			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] ^ registerMap[instrArray[i].rm]
 		case "LSR": // rn shifted shamt pad with sign bit
+			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rd] >> registerMap[instrArray[i].shamt]
 		case "LSL": // rd = rn << shamt
+			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rd] << registerMap[instrArray[i].shamt]
 		case "ASR": // rd = rn >> shamt
+			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rd] >> registerMap[instrArray[i].shamt]
 
 		case "LDUR":
 		case "STUR":
 
 		case "ADDI":
+			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] + registerMap[instrArray[i].im]
 		case "SUBI":
 
 		case "B":
