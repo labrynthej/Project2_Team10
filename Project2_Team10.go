@@ -52,9 +52,9 @@ func main() {
 	printResults(instructionsArray, *cmdOutFile+"_dis.txt")
 
 	// begin simulation
-	simInstructions(instructionsArray)
+	simInstructions(instructionsArray, *cmdOutFile+"_sim.txt")
 	fmt.Println(registerMap)
-	displaySimulation(instructionsArray, *cmdOutFile+"_sim.txt")
+	//printSimulation(instructionsArray, *cmdOutFile+"_sim.txt")
 
 	fmt.Println("infile:", *cmdInFile)
 	fmt.Println("outfile: ", *cmdOutFile)
@@ -390,11 +390,20 @@ func printResults(instrArray []Instruction, fileName string) {
 }
 
 // simulation functions
-func simInstructions(instrArray []Instruction) {
+func simInstructions(instrArray []Instruction, fileName string) {
 	// run function to decide outcome then assign based on cycle
 	for j := 0; j < 32; j++ {
 		registerMap[uint8(j)] = 0
 	}
+
+	cycle := 0
+
+	// create the file and keep open until the loop closes
+	file, fileErr := os.Create(fileName)
+	if fileErr != nil {
+		fmt.Println(fileErr)
+	}
+
 	// as long as instruction is not break, loop through all cycles
 	i := 0
 	for instrArray[i].typeOfInstruction != "BREAK" {
@@ -457,63 +466,65 @@ func simInstructions(instrArray []Instruction) {
 		case "MOVK":
 		case "NOP":
 		}
-		i++                   // increment loop counter
-		instrArray[i].cycle++ // increment cycle
+
+		cycle++                              // increment cycle
+		instrArray[i].cycle = cycle          // assign cycle to struct
+		printSimulation(instrArray[i], file) // print current struct simulation
+		i++                                  // increment loop counter
 	}
 	if instrArray[i].typeOfInstruction == "BREAK" {
 
 	}
 }
 
-func displaySimulation(simArray []Instruction, fileName string) {
-	f, fileErr := os.Create(fileName)
-	if fileErr != nil {
-		fmt.Println(fileErr)
+func printSimulation(sim Instruction, f *os.File) {
+
+	fmt.Fprintln(f, "====================")
+	fmt.Fprintf(f, "Cycle:%d\t%d\t%s\n", sim.cycle, sim.programCnt, instructionString(sim))
+
+	// print current register
+	fmt.Fprint(f, "\nRegisters:\n")
+	fmt.Fprintf(f, "r00:\t%s", mapToString(registerMap, 8))
+	fmt.Fprintf(f, "\nr08:\t%s", mapToString(registerMap, 16))
+	fmt.Fprintf(f, "\nr16:\t%s", mapToString(registerMap, 24))
+	fmt.Fprintf(f, "\nr24:\t%s\n", mapToString(registerMap, 32))
+
+	// print data
+	fmt.Fprintf(f, "\nData:")
+	var keys []int
+	for k := range dataSlice {
+		keys = append(keys, k)
 	}
-
-	for i, _ := range simArray {
-		fmt.Fprintln(f, "====================")
-		fmt.Fprintf(f, "Cycle:%d\t%d\t%s\n", simArray[i].cycle, simArray[i].programCnt, instructionString(simArray[i]))
-
-		// print current register
-		fmt.Fprint(f, "\nRegisters:\n")
-		fmt.Fprintf(f, "r00:\t%s", mapToString(registerMap, 8))
-		fmt.Fprintf(f, "\nr08:\t%s", mapToString(registerMap, 16))
-		fmt.Fprintf(f, "\nr16:\t%s", mapToString(registerMap, 24))
-		fmt.Fprintf(f, "\nr24:\t%s\n", mapToString(registerMap, 32))
-
-		// print data
-		fmt.Fprintf(f, "\nData:")
-		var keys []int
-		for k := range dataSlice {
-			keys = append(keys, k)
-		}
-		sort.Ints(keys)
-		for _, key := range keys {
-			if (key-keys[0])%32 == 0 {
-				fmt.Fprintf(f, "\n%d:\t", key)
-				for j := 0; j < 32; j = j + 4 {
-					fmt.Fprintf(f, "%d\t", dataSlice[key+j])
-				}
+	sort.Ints(keys)
+	for _, key := range keys {
+		if (key-keys[0])%32 == 0 {
+			fmt.Fprintf(f, "\n%d:\t", key)
+			for j := 0; j < 32; j = j + 4 {
+				fmt.Fprintf(f, "%d\t", dataSlice[key+j])
 			}
-
 		}
-		fmt.Fprintf(f, "\n")
+
 	}
+	fmt.Fprintf(f, "\n")
+
 }
 
 func instructionString(sim Instruction) string {
-	switch sim.op {
-	case "ADD":
+	switch sim.typeOfInstruction {
+	case "R":
 		return fmt.Sprintf("%s\tR%d, R%d, R%d", sim.op, sim.rd, sim.rm, sim.rn)
-	case "ADDI":
-		return fmt.Sprintf("%s\tR%d, R%d, #%s", sim.op, sim.rd, sim.rn, sim.im)
+	case "I":
+		return fmt.Sprintf("%s\tR%d, R%d, #%d", sim.op, sim.rd, sim.rn, sim.im)
+	case "D":
+		return fmt.Sprintf("%s\tR%d, [R%d, #%d]", sim.op, sim.rt, sim.rn, sim.address)
+	case "B":
+		return fmt.Sprintf("%s\t #%d", sim.op, sim.offset)
+	case "CB":
+		return fmt.Sprintf("%s\tR%d, #%d", sim.op, sim.conditional, sim.offset)
 	default:
 		return fmt.Sprintf("%s\t", sim.op)
 
 	}
-
-	return " "
 }
 
 func mapToString(arr map[uint8]int, highValue uint8) string {
