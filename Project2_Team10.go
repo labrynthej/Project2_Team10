@@ -145,8 +145,8 @@ func initializeInstructions(instArray []Instruction) {
 			// set values for instruction type "IM" | opcode | shift | field | Rd |
 			if instArray[i].typeOfInstruction == "IM" {
 				instArray[i].opcode = lineValue >> 23
-				instArray[i].shamt = uint8(lineValue)
-				instArray[i].field = lineValue & 0x300
+				instArray[i].shamt = uint8(lineValue & 300000 >> 21)
+				instArray[i].field = lineValue & 0x1FFFE0 >> 5
 				instArray[i].rd = uint8(lineValue & 0x1F)
 			}
 
@@ -522,6 +522,8 @@ func instructionString(sim Instruction) string {
 		return fmt.Sprintf("%s\t #%d", sim.op, sim.offset)
 	case "CB":
 		return fmt.Sprintf("%s\tR%d, #%d", sim.op, sim.conditional, sim.offset)
+	case "IM":
+		return fmt.Sprintf("%s\tR%d, %d, %d", sim.op, sim.rd, sim.field, sim.shamt*16)
 	default:
 		return fmt.Sprintf("%s\t", sim.op)
 
