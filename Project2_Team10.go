@@ -23,7 +23,7 @@ type Instruction struct {
 	im                uint8
 	rt                uint8
 	address           uint8
-	offset            uint8
+	offset            int32
 	conditional       uint8
 	shamt             uint8
 	op2               uint8
@@ -132,13 +132,13 @@ func initializeInstructions(instArray []Instruction) {
 			// set values for instruction type "B" | opcode | offset |
 			if instArray[i].typeOfInstruction == "B" {
 				instArray[i].opcode = lineValue >> 26
-				instArray[i].offset = uint8(signedVariable(lineValue&0x3FFFFFF, 26))
+				instArray[i].offset = signedVariable(lineValue&0x3FFFFFF, 26)
 			}
 
 			// set values for instruction type "CB" (conditional B) | opcode | offset |
 			if instArray[i].typeOfInstruction == "CB" {
 				instArray[i].opcode = lineValue >> 24
-				instArray[i].offset = uint8(signedVariable(lineValue&0xFFFFE0>>5, 19))
+				instArray[i].offset = signedVariable(lineValue&0xFFFFE0>>5, 19)
 				instArray[i].conditional = uint8(lineValue & 0x1F)
 			}
 
@@ -407,6 +407,7 @@ func simInstructions(instrArray []Instruction, fileName string) {
 	// as long as instruction is not break, loop through all cycles
 	i := 0
 	for instrArray[i].typeOfInstruction != "BREAK" {
+		count := 1
 		switch instrArray[i].op {
 		// R format instructions
 		case "SUB": // 	rd = rn - rm
@@ -448,16 +449,16 @@ func simInstructions(instrArray []Instruction, fileName string) {
 
 		// B and CB format instructions
 		case "B": // PC = PC +- (4 * offset)
-			instrArray[i].programCnt = instrArray[i].programCnt + (4 * int(instrArray[i].offset))
+			count = int(instrArray[i].offset)
 			break
 		case "CBZ": // if (conditional == 0) {PC = 4 * offset}
 			if instrArray[i].conditional == 0 {
-				instrArray[i].programCnt = 4 * int(instrArray[i].offset)
+				count = int(instrArray[i].offset)
 			}
 			break
 		case "CBNZ": // if (conditional == 1) {PC = 4 * offset}
-			if instrArray[i].conditional == 1 {
-				instrArray[i].programCnt = 4 * int(instrArray[i].offset)
+			if instrArray[i].conditional != 0 {
+				count = int(instrArray[i].offset)
 			}
 			break
 
@@ -470,7 +471,7 @@ func simInstructions(instrArray []Instruction, fileName string) {
 		cycle++                              // increment cycle
 		instrArray[i].cycle = cycle          // assign cycle to struct
 		printSimulation(instrArray[i], file) // print current struct simulation
-		i++                                  // increment loop counter
+		i = i + count                        // increment loop counter
 	}
 	if instrArray[i].typeOfInstruction == "BREAK" {
 
