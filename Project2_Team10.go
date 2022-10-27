@@ -392,11 +392,13 @@ func printResults(instrArray []Instruction, fileName string) {
 // simulation functions
 func simInstructions(instrArray []Instruction, fileName string) {
 	// run function to decide outcome then assign based on cycle
+
+	// initialize all keys of map and set to 0 (empty registers)
 	for j := 0; j < 32; j++ {
 		registerMap[uint8(j)] = 0
 	}
 
-	cycle := 0
+	cycle := 0 // initiliaze cycle
 
 	// create the file and keep open until the loop closes
 	file, fileErr := os.Create(fileName)
@@ -425,19 +427,21 @@ func simInstructions(instrArray []Instruction, fileName string) {
 		case "EOR": // rd = rm ^ rn
 			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] ^ registerMap[instrArray[i].rm]
 			break
-		case "LSR": // rn shifted shamt pad with sign bit
+		case "LSR": // rn shifted shamt
 			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rd] >> registerMap[instrArray[i].shamt]
 			break
 		case "LSL": // rd = rn << shamt
 			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rd] << registerMap[instrArray[i].shamt]
 			break
-		case "ASR": // rd = rn >> shamt
+		case "ASR": // rd = rn >> shamt pad with sign bit
 			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rd] >> registerMap[instrArray[i].shamt]
 			break
 
 		// D format instructions
 		case "LDUR":
+			registerMap[instrArray[i].rt] = dataSlice[registerMap[instrArray[i].rn]+int(instrArray[i].address)*4]
 		case "STUR":
+			dataSlice[registerMap[instrArray[i].rn]+int(instrArray[i].address)*4] = registerMap[instrArray[i].rt]
 
 		// I format instructions
 		case "ADDI": // rd = rn + im
@@ -466,6 +470,7 @@ func simInstructions(instrArray []Instruction, fileName string) {
 		case "MOVZ":
 		case "MOVK":
 		case "NOP":
+			break
 		}
 
 		cycle++                              // increment cycle
