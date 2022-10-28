@@ -53,7 +53,7 @@ func main() {
 
 	// begin simulation
 	simInstructions(instructionsArray, *cmdOutFile+"_sim.txt")
-	fmt.Println(registerMap)
+	//fmt.Println(registerMap)
 	//printSimulation(instructionsArray, *cmdOutFile+"_sim.txt")
 
 	fmt.Println("infile:", *cmdInFile)
