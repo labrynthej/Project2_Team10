@@ -145,7 +145,7 @@ func initializeInstructions(instArray []Instruction) {
 			// set values for instruction type "IM" | opcode | shift | field | Rd |
 			if instArray[i].typeOfInstruction == "IM" {
 				instArray[i].opcode = lineValue >> 23
-				instArray[i].shamt = uint8(lineValue & 300000 >> 21)
+				instArray[i].shamt = uint8(lineValue & 0x600000 >> 21)
 				instArray[i].field = lineValue & 0x1FFFE0 >> 5
 				instArray[i].rd = uint8(lineValue & 0x1F)
 			}
@@ -468,7 +468,12 @@ func simInstructions(instrArray []Instruction, fileName string) {
 
 		// IM format instructions
 		case "MOVZ":
+			registerMap[instrArray[i].rd] = 0
+			registerMap[instrArray[i].rd] = int(instrArray[i].field<<(instrArray[i].shamt*16)) &
+				(0xFFFFFFFF << (instrArray[i].shamt * 16))
 		case "MOVK":
+			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rd] +
+				int(instrArray[i].field<<(instrArray[i].shamt*16))
 		case "NOP":
 			break
 		}
@@ -528,7 +533,7 @@ func instructionString(sim Instruction) string {
 	case "CB":
 		return fmt.Sprintf("%s\tR%d, #%d", sim.op, sim.conditional, sim.offset)
 	case "IM":
-		return fmt.Sprintf("%s\tR%d, %d, %d", sim.op, sim.rd, sim.field, sim.shamt*16)
+		return fmt.Sprintf("%s\tR%d, %d, LSL %d", sim.op, sim.rd, sim.field, sim.shamt*16)
 	default:
 		return fmt.Sprintf("%s\t", sim.op)
 
