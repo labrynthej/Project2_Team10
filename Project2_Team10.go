@@ -53,11 +53,10 @@ func main() {
 
 	// begin simulation
 	simInstructions(instructionsArray, *cmdOutFile+"_sim.txt")
-	//fmt.Println(registerMap)
-	//printSimulation(instructionsArray, *cmdOutFile+"_sim.txt")
 
 	fmt.Println("infile:", *cmdInFile)
-	fmt.Println("outfile: ", *cmdOutFile)
+	fmt.Println("outfile: ", *cmdOutFile+"_dis.txt")
+	fmt.Println("simulation outfile: ", *cmdOutFile+"_sim.txt")
 }
 
 // reads the file and loads each line into the rawInstruction part of the Instruction
@@ -428,13 +427,13 @@ func simInstructions(instrArray []Instruction, fileName string) {
 			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] ^ registerMap[instrArray[i].rm]
 			break
 		case "LSR": // rn shifted shamt
-			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rd] >> registerMap[instrArray[i].shamt]
+			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] >> registerMap[instrArray[i].shamt]
 			break
 		case "LSL": // rd = rn << shamt
-			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rd] << registerMap[instrArray[i].shamt]
+			registerMap[instrArray[i].rd] = (registerMap[instrArray[i].rn]) << registerMap[instrArray[i].shamt]
 			break
 		case "ASR": // rd = rn >> shamt pad with sign bit
-			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rd] >> registerMap[instrArray[i].shamt]
+			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rn] >> registerMap[instrArray[i].shamt]
 			break
 
 		// D format instructions
@@ -484,7 +483,9 @@ func simInstructions(instrArray []Instruction, fileName string) {
 		i = i + count                        // increment loop counter
 	}
 	if instrArray[i].typeOfInstruction == "BREAK" {
-
+		cycle++
+		instrArray[i].cycle = cycle
+		printSimulation(instrArray[i], file)
 	}
 }
 
@@ -503,18 +504,21 @@ func printSimulation(sim Instruction, f *os.File) {
 	// print data
 	fmt.Fprintf(f, "\nData:")
 	var keys []int
-	for k := range dataSlice {
-		keys = append(keys, k)
+	max := 0
+	for i, _ := range dataSlice {
+		keys = append(keys, i)
 	}
-	sort.Ints(keys)
-	for _, key := range keys {
+	sort.Ints(keys) // sort data index using a temp array
+	for i, _ := range keys {
+		max = i
+	}
+	// iterate through the index  array and use to print data
+	for key := keys[0]; key <= keys[max]; key = key + 4 {
 		if (key-keys[0])%32 == 0 {
 			fmt.Fprintf(f, "\n%d:\t", key)
-			for j := 0; j < 32; j = j + 4 {
-				fmt.Fprintf(f, "%d\t", dataSlice[key+j])
-			}
 		}
 
+		fmt.Fprintf(f, "%d\t", dataSlice[key])
 	}
 	fmt.Fprintf(f, "\n")
 
@@ -523,7 +527,12 @@ func printSimulation(sim Instruction, f *os.File) {
 func instructionString(sim Instruction) string {
 	switch sim.typeOfInstruction {
 	case "R":
-		return fmt.Sprintf("%s\tR%d, R%d, R%d", sim.op, sim.rd, sim.rm, sim.rn)
+		switch sim.op {
+		case "LSL", "LSR", "ASR":
+			return fmt.Sprintf("%s\tR%d, R%d, #%d", sim.op, sim.rd, sim.rm, sim.shamt)
+		default:
+			return fmt.Sprintf("%s\tR%d, R%d, R%d", sim.op, sim.rd, sim.rm, sim.rn)
+		}
 	case "I":
 		return fmt.Sprintf("%s\tR%d, R%d, #%d", sim.op, sim.rd, sim.rn, sim.im)
 	case "D":
