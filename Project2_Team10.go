@@ -439,8 +439,10 @@ func simInstructions(instrArray []Instruction, fileName string) {
 		// D format instructions
 		case "LDUR":
 			registerMap[instrArray[i].rt] = dataSlice[registerMap[instrArray[i].rn]+int(instrArray[i].address)*4]
+			break
 		case "STUR":
 			dataSlice[registerMap[instrArray[i].rn]+int(instrArray[i].address)*4] = registerMap[instrArray[i].rt]
+			break
 
 		// I format instructions
 		case "ADDI": // rd = rn + im
@@ -470,9 +472,11 @@ func simInstructions(instrArray []Instruction, fileName string) {
 			registerMap[instrArray[i].rd] = 0
 			registerMap[instrArray[i].rd] = int(instrArray[i].field<<(instrArray[i].shamt*16)) &
 				(0xFFFFFFFF << (instrArray[i].shamt * 16))
+			break
 		case "MOVK":
 			registerMap[instrArray[i].rd] = registerMap[instrArray[i].rd] +
 				int(instrArray[i].field<<(instrArray[i].shamt*16))
+			break
 		case "NOP":
 			break
 		}
@@ -513,13 +517,23 @@ func printSimulation(sim Instruction, f *os.File) {
 		max = i
 	}
 	// iterate through the index  array and use to print data
-	for key := keys[0]; key <= keys[max]; key = key + 4 {
-		if (key-keys[0])%32 == 0 {
-			fmt.Fprintf(f, "\n%d:\t", key)
-		}
+	if keys != nil {
+		for key := keys[0]; key <= keys[max]; key = key + 4 {
+			if (key-keys[0])%32 == 0 {
+				fmt.Fprintf(f, "\n%d:\t", key)
+				for i := 0; i < 32; i = i + 4 {
+					if dataSlice[key+i] != 0 {
+						fmt.Fprintf(f, "%d\t", dataSlice[key+i])
+					} else {
+						dataSlice[key+i] = 0
+						fmt.Fprintf(f, "%d\t", dataSlice[key+i])
+					}
+				}
+			}
 
-		fmt.Fprintf(f, "%d\t", dataSlice[key])
+		}
 	}
+
 	fmt.Fprintf(f, "\n")
 
 }
